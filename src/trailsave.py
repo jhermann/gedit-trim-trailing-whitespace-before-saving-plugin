@@ -14,14 +14,10 @@
 # this program; if not, write to the Free Software Foundation, Inc., 51
 # Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-"""Automatically strip all trailing whitespace before saving."""
-
 import gedit
 
-
-class SaveWithoutTrailingSpacePlugin(gedit.Plugin):
-
-    """Automatically strip all trailing whitespace before saving."""
+class TrimTrailingWhitespaceBeforeSavingPlugin(gedit.Plugin):
+    """Automatically trims trailing whitespace before saving."""
 
     def activate(self, window):
         """Activate plugin."""
@@ -50,11 +46,11 @@ class SaveWithoutTrailingSpacePlugin(gedit.Plugin):
             doc.set_data(name, None)
 
     def on_document_saving(self, doc, *args):
-        """Strip trailing spaces in document."""
+        """Trim trailing spaces in document."""
 
         doc.begin_user_action()
-        self.strip_trailing_spaces_on_lines(doc)
-        self.strip_trailing_blank_lines(doc)
+        self.trim_trailing_spaces_on_lines(doc)
+        self.trim_trailing_blank_lines(doc)
         doc.end_user_action()
 
     def on_window_tab_added(self, window, tab):
@@ -66,7 +62,7 @@ class SaveWithoutTrailingSpacePlugin(gedit.Plugin):
         if handler_id is None:
             self.connect_document(doc)
 
-    def strip_trailing_blank_lines(self, doc):
+    def trim_trailing_blank_lines(self, doc):
         """Delete trailing space at the end of the document."""
 
         buffer_end = doc.get_end_iter()
@@ -78,7 +74,7 @@ class SaveWithoutTrailingSpacePlugin(gedit.Plugin):
                     break
             doc.delete(itr, buffer_end)
 
-    def strip_trailing_spaces_on_lines(self, doc):
+    def trim_trailing_spaces_on_lines(self, doc):
         """Delete trailing space at the end of each line."""
 
         buffer_end = doc.get_end_iter()

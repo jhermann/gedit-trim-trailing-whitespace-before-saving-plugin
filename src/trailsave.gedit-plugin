@@ -1,9 +1,9 @@
 [Gedit Plugin]
-Loader=python
-Module=trailsave
+Loader=Python
+Module=trim-trailing-whitespace-before-saving
 IAge=2
-Name=Save without trailing space
-Description=Automatically strip all trailing whitespace before saving
+Name=Trim Trailing Whitespace Before Saving
+Description=Automatically trim trailing whitespace before saving
 Authors=Osmo Salomaa <otsaloma@cc.hut.fi>
 Copyright=Copyright (C) 2006-2008 Osmo Salomaa
-Website=http://users.tkk.fi/~otsaloma/gedit
+Website=https://github.com/dtrebbien/gedit-trim-trailing-whitespace-before-saving-plugin
