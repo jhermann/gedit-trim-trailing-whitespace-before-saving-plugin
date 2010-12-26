@@ -49,7 +49,9 @@ class TrimTrailingWhitespaceBeforeSavingPlugin(gedit.Plugin):
         """Trim trailing spaces in document."""
 
         doc.begin_user_action()
-        self.trim_trailing_spaces_on_lines(doc)
+        language_id = doc.get_language().get_id()
+        if language_id != "diff":
+            self.trim_trailing_spaces_on_lines(doc)
         self.trim_trailing_blank_lines(doc)
         doc.end_user_action()
 
