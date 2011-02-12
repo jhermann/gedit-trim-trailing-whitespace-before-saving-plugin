@@ -1,3 +1,4 @@
+# -*- coding: utf-8; tab-width: 4; indent-tabs-mode: nil -*-
 # Copyright (C) 2006-2008 Osmo Salomaa
 #
 # This program is free software; you can redistribute it and/or modify it under
