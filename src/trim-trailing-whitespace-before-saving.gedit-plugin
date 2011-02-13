@@ -1,5 +1,5 @@
 [Gedit Plugin]
-Loader=Python
+Loader=python
 Module=trim-trailing-whitespace-before-saving
 IAge=2
 Name=Trim Trailing Whitespace Before Saving
