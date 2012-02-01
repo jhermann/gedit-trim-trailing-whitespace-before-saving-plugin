@@ -1,6 +1,6 @@
 ## Introduction
 
-This is a simple plugin for Gedit 3.x which automatically trims trailing whitespace from documents when saving. It deletes all horizontal whitespace on the ends of lines as well as extra blank lines at the end of the file.
+This is a simple plugin for Gedit 3 which automatically trims trailing whitespace from documents when saving. It deletes all horizontal whitespace on the ends of lines as well as extra blank lines at the end of the file.
 
 ## Installation
  0. You may need to create some directories if you haven't installed Gedit plugins locally before:
@@ -14,7 +14,7 @@ mkdir --parents ~/.local/share/gedit/plugins
  4. On the Plugins tab, scroll down to the entry for "Trim Trailing Whitespace Before Saving" and check the checkbox.
  5. Click Close.
 
-## Uninstallation
+### Uninstallation
  0. From the Edit menu, select "Preferences".
  1. On the Plugins tab, scroll down to the entry for "Trim Trailing Whitespace Before Saving" and uncheck the checkbox.
  2. Close Gedit.
