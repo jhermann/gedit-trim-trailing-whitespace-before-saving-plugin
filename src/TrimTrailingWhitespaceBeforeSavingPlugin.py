@@ -23,6 +23,7 @@ DEBUG_PLUGINS = Gedit.DebugSection.DEBUG_PLUGINS
 
 # Bug 668924 - Make gedit_debug_message() introspectable <https://bugzilla.gnome.org/show_bug.cgi?id=668924>
 try:
+    debug_message2 = Gedit.debug_message2
     debug_message = Gedit.debug_message
 except:
     def debug_message(section, filename, lineno, func_name, format_str, *args):
