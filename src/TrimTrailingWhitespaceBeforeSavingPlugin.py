@@ -61,6 +61,8 @@ class TrimTrailingWhitespaceBeforeSavingPlugin(GObject.Object, Gedit.WindowActiv
     window = GObject.property(type=Gedit.Window)
 
     def __init__(self):
+        GObject.Object.__init__(self)
+
         debug_plugin_message("self=%r", self)
 
     def __del__(self):
