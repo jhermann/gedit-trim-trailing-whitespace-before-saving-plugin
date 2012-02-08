@@ -8,7 +8,7 @@ This is a simple plugin for Gedit 3 which automatically trims trailing whitespac
     <pre>
 mkdir --parents ~/.local/share/gedit/plugins
 </pre>
- 1. Save the latest [`trim-trailing-whitespace-before-saving.plugin`](https://github.com/dtrebbien/gedit-trim-trailing-whitespace-before-saving-plugin/raw/master/src/trim-trailing-whitespace-before-saving.plugin) and [`TrimTrailingWhitespaceBeforeSavingPlugin.py`](https://github.com/dtrebbien/gedit-trim-trailing-whitespace-before-saving-plugin/raw/master/src/TrimTrailingWhitespaceBeforeSavingPlugin.py) to `~/.local/share/gedit/plugins`
+ 1. Save the latest [`trimtrailingws.plugin`](https://github.com/dtrebbien/gedit-trim-trailing-whitespace-before-saving-plugin/raw/master/src/trimtrailingws.plugin) and [`trimtrailingws.py`](https://github.com/dtrebbien/gedit-trim-trailing-whitespace-before-saving-plugin/raw/master/src/trimtrailingws.py) to `~/.local/share/gedit/plugins`
  2. Re-start Gedit.
  3. From the Edit menu, select "Preferences".
  4. On the Plugins tab, scroll down to the entry for "Trim Trailing Whitespace Before Saving" and check the checkbox.
@@ -18,7 +18,7 @@ mkdir --parents ~/.local/share/gedit/plugins
  0. From the Edit menu, select "Preferences".
  1. On the Plugins tab, scroll down to the entry for "Trim Trailing Whitespace Before Saving" and uncheck the checkbox.
  2. Close Gedit.
- 3. Delete `trim-trailing-whitespace-before-saving.plugin` and `TrimTrailingWhitespaceBeforeSavingPlugin.py` from `~/.local/share/gedit/plugins`.
+ 3. Delete `trimtrailingws.plugin` and `trimtrailingws.py` from `~/.local/share/gedit/plugins`.
 
 ## Notes
  *  The plugin looks at the document's syntax highlighting mode. If the highlighting mode is "Plain Text" or "Diff", then the plugin does not remove trailing whitespace.

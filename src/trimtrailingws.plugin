@@ -1,6 +1,6 @@
 [Plugin]
 Loader=python
-Module=TrimTrailingWhitespaceBeforeSavingPlugin
+Module=trimtrailingws
 IAge=3
 Name=Trim Trailing Whitespace Before Saving
 Description=Automatically trim trailing whitespace before saving
