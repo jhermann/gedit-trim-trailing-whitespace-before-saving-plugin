@@ -73,7 +73,7 @@ class TrimTrailingWhitespaceBeforeSavingPlugin(GObject.Object, Gedit.WindowActiv
 
         # Connect to the 'tab-added' signal.
         handler_id = window.connect("tab-added", self.__on_window_tab_added)
-        window.set_data(TrimTrailingWhitespaceBeforeSavingPlugin.TAB_ADDED_HANDLER_ID_KEY, handler_id)
+        setattr(window, TrimTrailingWhitespaceBeforeSavingPlugin.TAB_ADDED_HANDLER_ID_KEY, handler_id)
 
         # For each document that is currently open, call __connect_document()
         # to connect all plugin-specific event handlers.
@@ -87,18 +87,23 @@ class TrimTrailingWhitespaceBeforeSavingPlugin(GObject.Object, Gedit.WindowActiv
     def __connect_document(self, doc):
         """Connect to the document's 'saving' signal."""
 
-        handler_id = doc.get_data(TrimTrailingWhitespaceBeforeSavingPlugin.SAVING_HANDLER_ID_KEY)
-        if handler_id is None:
+        try:
+            getattr(doc, TrimTrailingWhitespaceBeforeSavingPlugin.SAVING_HANDLER_ID_KEY)
+        except AttributeError:
             # When saving the document, call __on_document_saving().
             handler_id = doc.connect("saving", self.__on_document_saving)
-            doc.set_data(TrimTrailingWhitespaceBeforeSavingPlugin.SAVING_HANDLER_ID_KEY, handler_id)
+            setattr(doc, TrimTrailingWhitespaceBeforeSavingPlugin.SAVING_HANDLER_ID_KEY, handler_id)
 
     def __disconnect_document(self, doc):
         """Disconnect from the document's 'saving' signal."""
 
-        handler_id = doc.get_data(TrimTrailingWhitespaceBeforeSavingPlugin.SAVING_HANDLER_ID_KEY)
-        doc.disconnect(handler_id)
-        doc.set_data(TrimTrailingWhitespaceBeforeSavingPlugin.SAVING_HANDLER_ID_KEY, None)
+        try:
+            handler_id = getattr(doc, TrimTrailingWhitespaceBeforeSavingPlugin.SAVING_HANDLER_ID_KEY)
+        except AttributeError:
+            pass
+        else:
+            doc.disconnect(handler_id)
+            delattr(doc, TrimTrailingWhitespaceBeforeSavingPlugin.SAVING_HANDLER_ID_KEY)
 
     def do_deactivate(self):
         window = self.window
@@ -109,9 +114,13 @@ class TrimTrailingWhitespaceBeforeSavingPlugin(GObject.Object, Gedit.WindowActiv
             self.__disconnect_document(doc)
 
         # Disconnect from the 'tab-added' signal.
-        handler_id = window.get_data(TrimTrailingWhitespaceBeforeSavingPlugin.TAB_ADDED_HANDLER_ID_KEY)
-        window.disconnect(handler_id)
-        window.set_data(TrimTrailingWhitespaceBeforeSavingPlugin.TAB_ADDED_HANDLER_ID_KEY, None)
+        try:
+            handler_id = getattr(window, TrimTrailingWhitespaceBeforeSavingPlugin.TAB_ADDED_HANDLER_ID_KEY)
+        except AttributeError:
+            pass
+        else:
+            window.disconnect(handler_id)
+            delattr(window, TrimTrailingWhitespaceBeforeSavingPlugin.TAB_ADDED_HANDLER_ID_KEY)
 
     def __on_document_saving(self, doc, *args):
         """Trim trailing space in the document."""
