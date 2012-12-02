@@ -16,7 +16,7 @@
 # this program; if not, write to the Free Software Foundation, Inc., 51
 # Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-from gi.repository import GObject, Gedit
+from gi.repository import GObject, Gtk, Gedit
 import inspect
 
 def get_trace_info(num_back_frames=0):
@@ -94,8 +94,19 @@ class TrimTrailingWhitespaceBeforeSavingPlugin(GObject.Object, Gedit.WindowActiv
             handler_id = doc.connect("saving", self.__on_document_saving)
             setattr(doc, TrimTrailingWhitespaceBeforeSavingPlugin.SAVING_HANDLER_ID_KEY, handler_id)
 
+        if not hasattr(doc, "saved_handler_id"):
+            doc.saved_handler_id = doc.connect("saved", self.__on_document_saved)
+
     def __disconnect_document(self, doc):
         """Disconnect from the document's 'saving' signal."""
+
+        try:
+            saved_handler_id = getattr(doc, "saved_handler_id")
+        except AttributeError:
+            pass
+        else:
+            doc.disconnect(saved_handler_id)
+            del doc.saved_handler_id
 
         try:
             handler_id = getattr(doc, TrimTrailingWhitespaceBeforeSavingPlugin.SAVING_HANDLER_ID_KEY)
@@ -125,6 +136,23 @@ class TrimTrailingWhitespaceBeforeSavingPlugin(GObject.Object, Gedit.WindowActiv
     def __on_document_saving(self, doc, *args):
         """Trim trailing space in the document."""
 
+        if hasattr(doc, "current_lineno"):
+            return
+
+        cursor_position = doc.get_property("cursor-position")
+        it = doc.get_iter_at_offset(cursor_position)
+        doc.current_lineno = it.get_line()
+        bol = it.copy()
+        if not bol.starts_line():
+            bol.set_line_offset(0)
+            assert bol.starts_line()
+        eol = it.copy()
+        if not eol.ends_line():
+            eol.forward_to_line_end()
+        tb_slice = doc.get_slice(bol, eol, False)
+        rstripped_tb_slice = tb_slice.rstrip()
+        doc.current_line_trailing_whitespace = tb_slice[len(rstripped_tb_slice):it.get_line_offset()]
+
         doc.begin_user_action()
         language = doc.get_language()
         if language != None:
@@ -133,6 +161,23 @@ class TrimTrailingWhitespaceBeforeSavingPlugin(GObject.Object, Gedit.WindowActiv
                 self.__trim_trailing_spaces_on_lines(doc)
         self.__trim_trailing_blank_lines(doc)
         doc.end_user_action()
+
+    def __on_document_saved(self, doc, err):
+        try:
+            current_lineno = getattr(doc, "current_lineno")
+            current_line_trailing_whitespace = getattr(doc, "current_line_trailing_whitespace")
+        except AttributeError:
+            pass
+        else:
+            del doc.current_line_trailing_whitespace
+            del doc.current_lineno
+            if len(current_line_trailing_whitespace) > 0:
+                it = doc.get_iter_at_line(current_lineno)
+                if it.get_line() == current_lineno:
+                    if not it.ends_line():
+                        it.forward_to_line_end()
+                    Gtk.TextBuffer.insert(doc, it, current_line_trailing_whitespace, -1)
+                    doc.set_modified(False)
 
     def __trim_trailing_blank_lines(self, doc):
         """Delete extra blank lines at the end of the document."""
@@ -152,7 +197,8 @@ class TrimTrailingWhitespaceBeforeSavingPlugin(GObject.Object, Gedit.WindowActiv
         buffer_end = doc.get_end_iter()
         for lineno in range(buffer_end.get_line() + 1):
             line_end = doc.get_iter_at_line(lineno)
-            line_end.forward_to_line_end()
+            if not line_end.ends_line():
+                line_end.forward_to_line_end()
             itr = line_end.copy()
             while itr.backward_char():
                 if not itr.get_char() in (" ", "\t"):
