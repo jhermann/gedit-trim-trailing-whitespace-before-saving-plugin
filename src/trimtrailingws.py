@@ -58,7 +58,7 @@ class TrimTrailingWhitespaceBeforeSavingPlugin(GObject.Object, Gedit.WindowActiv
     TAB_ADDED_HANDLER_ID_KEY = "GeditTrimTrailingWhitespaceBeforeSavingPluginTabAddedHandlerId"
     SAVING_HANDLER_ID_KEY = "GeditTrimTrailingWhitespaceBeforeSavingPluginSavingHandlerId"
 
-    window = GObject.property(type=Gedit.Window)
+    window = GObject.property(type = Gedit.Window)
 
     def __init__(self):
         GObject.Object.__init__(self)
@@ -150,8 +150,8 @@ class TrimTrailingWhitespaceBeforeSavingPlugin(GObject.Object, Gedit.WindowActiv
         """Delete trailing space on each line."""
 
         buffer_end = doc.get_end_iter()
-        for line in range(buffer_end.get_line() + 1):
-            line_end = doc.get_iter_at_line(line)
+        for lineno in range(buffer_end.get_line() + 1):
+            line_end = doc.get_iter_at_line(lineno)
             line_end.forward_to_line_end()
             itr = line_end.copy()
             while itr.backward_char():
