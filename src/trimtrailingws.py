@@ -64,7 +64,7 @@ class TrimTrailingWhitespaceBeforeSavingPlugin(GObject.Object, Gedit.WindowActiv
     # GtkTextBuffer considers line ends to consist of either a newline, a carriage return,
     # a carriage return followed by a newline, or a Unicode paragraph separator character.
     # <http://developer.gnome.org/gtk3/stable/GtkTextIter.html#gtk-text-iter-ends-line>
-    EOL_WHITESPACE_RE = re.compile(u"[^\n\r\u2029]*?([" + WHITESPACE_CHARS + u"]*)(?:\n|\r|\r\n|\u2029)")
+    EOL_WHITESPACE_RE = re.compile(u"[^\n\r\u2029]*?([" + WHITESPACE_CHARS + u"]*)(?:\n|\r|\r\n|\u2029|$)")
 
     window = GObject.property(type = Gedit.Window)
 
