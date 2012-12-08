@@ -18,6 +18,7 @@
 
 from gi.repository import GObject, Gtk, Gedit
 import inspect
+import re
 
 def get_trace_info(num_back_frames=0):
     frame = inspect.currentframe().f_back
@@ -57,6 +58,13 @@ class TrimTrailingWhitespaceBeforeSavingPlugin(GObject.Object, Gedit.WindowActiv
 
     TAB_ADDED_HANDLER_ID_KEY = "GeditTrimTrailingWhitespaceBeforeSavingPluginTabAddedHandlerId"
     SAVING_HANDLER_ID_KEY = "GeditTrimTrailingWhitespaceBeforeSavingPluginSavingHandlerId"
+
+    WHITESPACE_CHARS = "\t\v\f "
+
+    # GtkTextBuffer considers line ends to consist of either a newline, a carriage return,
+    # a carriage return followed by a newline, or a Unicode paragraph separator character.
+    # <http://developer.gnome.org/gtk3/stable/GtkTextIter.html#gtk-text-iter-ends-line>
+    EOL_WHITESPACE_RE = re.compile(u"[^\n\r\u2029]*?([" + WHITESPACE_CHARS + u"]*)(?:\n|\r|\r\n|\u2029)")
 
     window = GObject.property(type = Gedit.Window)
 
@@ -150,7 +158,8 @@ class TrimTrailingWhitespaceBeforeSavingPlugin(GObject.Object, Gedit.WindowActiv
         if not eol.ends_line():
             eol.forward_to_line_end()
         tb_slice = doc.get_slice(bol, eol, False)
-        rstripped_tb_slice = tb_slice.rstrip()
+        tb_slice = unicode(tb_slice, 'utf-8')
+        rstripped_tb_slice = tb_slice.rstrip(TrimTrailingWhitespaceBeforeSavingPlugin.WHITESPACE_CHARS)
         doc.current_line_trailing_whitespace = tb_slice[len(rstripped_tb_slice):it.get_line_offset()]
 
         doc.begin_user_action()
@@ -194,14 +203,25 @@ class TrimTrailingWhitespaceBeforeSavingPlugin(GObject.Object, Gedit.WindowActiv
     def __trim_trailing_spaces_on_lines(self, doc):
         """Delete trailing space on each line."""
 
-        buffer_end = doc.get_end_iter()
-        for lineno in range(buffer_end.get_line() + 1):
-            line_end = doc.get_iter_at_line(lineno)
-            if not line_end.ends_line():
-                line_end.forward_to_line_end()
-            itr = line_end.copy()
-            while itr.backward_char():
-                if not itr.get_char() in (" ", "\t"):
-                    itr.forward_char()
-                    break
-            doc.delete(itr, line_end)
+        start = doc.get_start_iter()
+        end = doc.get_end_iter()
+        tb_slice = doc.get_slice(start, end, False)
+        tb_slice = unicode(tb_slice, 'utf-8')
+        eol_whitespace_re = TrimTrailingWhitespaceBeforeSavingPlugin.EOL_WHITESPACE_RE
+        lineno = 0
+        for match in eol_whitespace_re.finditer(tb_slice):
+            start_line_offset = match.start(1) - match.start()
+            end_line_offset = match.end(1) - match.start()
+            if start_line_offset != end_line_offset:
+                start.set_line(lineno)
+                start.set_line_offset(start_line_offset)
+                end.set_line(lineno)
+                end.set_line_offset(end_line_offset)
+                if not end.ends_line():
+                    end.forward_to_line_end()
+                # This looks bad---deleting parts of the buffer while traversing
+                # forward through it---but it's actually fine because the `start'
+                # and `end' iterators are re-positioned relative to offsets within
+                # lines, and we aren't changing the number of lines here.
+                doc.delete(start, end)
+            lineno = lineno + 1
