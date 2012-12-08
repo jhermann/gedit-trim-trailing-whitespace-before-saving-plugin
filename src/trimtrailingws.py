@@ -16,7 +16,7 @@
 # this program; if not, write to the Free Software Foundation, Inc., 51
 # Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-from gi.repository import GObject, Gtk, Gedit
+from gi.repository import GLib, GObject, Gtk, Gedit
 import inspect
 import re
 
@@ -157,15 +157,33 @@ class TrimTrailingWhitespaceBeforeSavingPlugin(GObject.Object, Gedit.ViewActivat
             if len(current_line_trailing_whitespace) > 0:
                 it = doc.get_iter_at_line(current_lineno)
                 lineno = it.get_line()
+                lineno_delta = current_lineno - lineno
                 # Restore blank lines leading up to the line with the whitespace-to-be-restored.
-                s = "\n" * (current_lineno - lineno) + current_line_trailing_whitespace
+                s = "\n" * lineno_delta + current_line_trailing_whitespace
                 if not it.ends_line():
                     it.forward_to_line_end()
                 Gtk.TextBuffer.insert(doc, it, s, -1)
+
                 # Clear the 'modified' flag on the buffer. The only thing we did
                 # is restored whitespace leading up to the cursor position before
                 # save. Note that the file was saved without this whitespace.
                 doc.set_modified(False)
+
+                if lineno_delta > 0:
+                    # Issue #6 - Scroll the text view cursor into view after save
+                    # <https://github.com/dtrebbien/gedit-trim-trailing-whitespace-before-saving-plugin/issues/6>
+                    # When restoring a number of blank lines at the end, the cursor
+                    # can be off-screen at the end of a save. Make sure that the
+                    # cursor is in view.
+                    #
+                    # This is done via idle_add() because the scrolling has no
+                    # effect if done immediately.
+                    GLib.idle_add(self.__scroll_to_end)
+
+    def __scroll_to_end(self):
+        doc = self.view.get_buffer()
+        self.view.scroll_to_iter(doc.get_end_iter(), 0, False, 0, 0)
+        return False
 
     def __trim_trailing_blank_lines(self, doc):
         """Delete extra blank lines at the end of the document."""
