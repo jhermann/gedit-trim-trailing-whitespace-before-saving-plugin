@@ -192,11 +192,16 @@ class TrimTrailingWhitespaceBeforeSavingPlugin(GObject.Object, Gedit.WindowActiv
             del doc.current_line_trailing_whitespace
             if len(current_line_trailing_whitespace) > 0:
                 it = doc.get_iter_at_line(current_lineno)
-                if it.get_line() == current_lineno:
-                    if not it.ends_line():
-                        it.forward_to_line_end()
-                    Gtk.TextBuffer.insert(doc, it, current_line_trailing_whitespace, -1)
-                    doc.set_modified(False)
+                lineno = it.get_line()
+                # Restore blank lines leading up to the line with the whitespace-to-be-restored.
+                s = "\n" * (current_lineno - lineno) + current_line_trailing_whitespace
+                if not it.ends_line():
+                    it.forward_to_line_end()
+                Gtk.TextBuffer.insert(doc, it, s, -1)
+                # Clear the 'modified' flag on the buffer. The only thing we did
+                # is restored whitespace leading up to the cursor position before
+                # save. Note that the file was saved without this whitespace.
+                doc.set_modified(False)
 
     def __trim_trailing_blank_lines(self, doc):
         """Delete extra blank lines at the end of the document."""
