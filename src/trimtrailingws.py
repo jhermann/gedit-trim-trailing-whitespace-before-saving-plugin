@@ -95,9 +95,7 @@ class TrimTrailingWhitespaceBeforeSavingPlugin(GObject.Object, Gedit.WindowActiv
     def __connect_document(self, doc):
         """Connect to the document's 'saving' signal."""
 
-        try:
-            getattr(doc, TrimTrailingWhitespaceBeforeSavingPlugin.SAVING_HANDLER_ID_KEY)
-        except AttributeError:
+        if not hasattr(doc, TrimTrailingWhitespaceBeforeSavingPlugin.SAVING_HANDLER_ID_KEY):
             # When saving the document, call __on_document_saving().
             handler_id = doc.connect("saving", self.__on_document_saving)
             setattr(doc, TrimTrailingWhitespaceBeforeSavingPlugin.SAVING_HANDLER_ID_KEY, handler_id)
@@ -109,20 +107,20 @@ class TrimTrailingWhitespaceBeforeSavingPlugin(GObject.Object, Gedit.WindowActiv
         """Disconnect from the document's 'saving' signal."""
 
         try:
-            saved_handler_id = getattr(doc, "saved_handler_id")
+            saved_handler_id = doc.saved_handler_id
         except AttributeError:
             pass
         else:
-            doc.disconnect(saved_handler_id)
             del doc.saved_handler_id
+            doc.disconnect(saved_handler_id)
 
         try:
             handler_id = getattr(doc, TrimTrailingWhitespaceBeforeSavingPlugin.SAVING_HANDLER_ID_KEY)
         except AttributeError:
             pass
         else:
-            doc.disconnect(handler_id)
             delattr(doc, TrimTrailingWhitespaceBeforeSavingPlugin.SAVING_HANDLER_ID_KEY)
+            doc.disconnect(handler_id)
 
     def do_deactivate(self):
         window = self.window
@@ -138,8 +136,8 @@ class TrimTrailingWhitespaceBeforeSavingPlugin(GObject.Object, Gedit.WindowActiv
         except AttributeError:
             pass
         else:
-            window.disconnect(handler_id)
             delattr(window, TrimTrailingWhitespaceBeforeSavingPlugin.TAB_ADDED_HANDLER_ID_KEY)
+            window.disconnect(handler_id)
 
     def __on_document_saving(self, doc, *args):
         """Trim trailing space in the document."""
@@ -147,6 +145,10 @@ class TrimTrailingWhitespaceBeforeSavingPlugin(GObject.Object, Gedit.WindowActiv
         if hasattr(doc, "current_lineno"):
             return
 
+        # Issue #2 - Add back trailing whitespace up to the cursor on the current line
+        # <https://github.com/dtrebbien/gedit-trim-trailing-whitespace-before-saving-plugin/issues/2>
+        # Remember the whitespace leading up to the current cursor position.
+        # This will be re-added to the buffer when the 'saved' signal is emitted.
         cursor_position = doc.get_property("cursor-position")
         it = doc.get_iter_at_offset(cursor_position)
         doc.current_lineno = it.get_line()
@@ -166,6 +168,8 @@ class TrimTrailingWhitespaceBeforeSavingPlugin(GObject.Object, Gedit.WindowActiv
         language = doc.get_language()
         if language != None:
             language_id = language.get_id()
+            # Make sure that this is not a patch file before trimming trailing whitespace.
+            # Trimming trailing whitespace in a patch file can cause conflicts.
             if language_id != "diff":
                 self.__trim_trailing_spaces_on_lines(doc)
         self.__trim_trailing_blank_lines(doc)
@@ -173,13 +177,19 @@ class TrimTrailingWhitespaceBeforeSavingPlugin(GObject.Object, Gedit.WindowActiv
 
     def __on_document_saved(self, doc, err):
         try:
-            current_lineno = getattr(doc, "current_lineno")
-            current_line_trailing_whitespace = getattr(doc, "current_line_trailing_whitespace")
+            current_lineno = doc.current_lineno
+        except AttributeError:
+            del doc.current_line_trailing_whitespace
+            return
+        else:
+            del doc.current_lineno
+
+        try:
+            current_line_trailing_whitespace = doc.current_line_trailing_whitespace
         except AttributeError:
             pass
         else:
             del doc.current_line_trailing_whitespace
-            del doc.current_lineno
             if len(current_line_trailing_whitespace) > 0:
                 it = doc.get_iter_at_line(current_lineno)
                 if it.get_line() == current_lineno:
