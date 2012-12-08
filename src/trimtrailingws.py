@@ -20,7 +20,7 @@ from gi.repository import GObject, Gtk, Gedit
 import inspect
 import re
 
-def get_trace_info(num_back_frames=0):
+def get_trace_info(num_back_frames = 0):
     frame = inspect.currentframe().f_back
     try:
         for i in range(num_back_frames):
@@ -53,11 +53,8 @@ except:
         Gedit.debug(Gedit.DebugSection.DEBUG_PLUGINS, filename, lineno, func_name)
 
 
-class TrimTrailingWhitespaceBeforeSavingPlugin(GObject.Object, Gedit.WindowActivatable):
-    __gtype_name__ = "TrimTrailingWhitespaceBeforeSavingPlugin"
-
-    TAB_ADDED_HANDLER_ID_KEY = "GeditTrimTrailingWhitespaceBeforeSavingPluginTabAddedHandlerId"
-    SAVING_HANDLER_ID_KEY = "GeditTrimTrailingWhitespaceBeforeSavingPluginSavingHandlerId"
+class TrimTrailingWhitespaceBeforeSavingPlugin(GObject.Object, Gedit.ViewActivatable):
+    __gtype_name__ = "GeditTrimTrailingWhitespaceBeforeSavingPlugin"
 
     WHITESPACE_CHARS = "\t\v\f "
 
@@ -66,45 +63,29 @@ class TrimTrailingWhitespaceBeforeSavingPlugin(GObject.Object, Gedit.WindowActiv
     # <http://developer.gnome.org/gtk3/stable/GtkTextIter.html#gtk-text-iter-ends-line>
     EOL_WHITESPACE_RE = re.compile(u"[^\n\r\u2029]*?([" + WHITESPACE_CHARS + u"]*)(?:\n|\r|\r\n|\u2029|$)")
 
-    window = GObject.property(type = Gedit.Window)
+    view = GObject.property(type = Gedit.View)
 
     def __init__(self):
         GObject.Object.__init__(self)
 
-        debug_plugin_message("self=%r", self)
+        debug_plugin_message("self = %r", self)
 
     def __del__(self):
-        debug_plugin_message("self=%r", self)
+        debug_plugin_message("self = %r", self)
 
     def do_activate(self):
-        window = self.window
+        """Connect to the document's 'saving' and 'saved' signals."""
+        doc = self.view.get_buffer()
 
-        # Connect to the 'tab-added' signal.
-        handler_id = window.connect("tab-added", self.__on_window_tab_added)
-        setattr(window, TrimTrailingWhitespaceBeforeSavingPlugin.TAB_ADDED_HANDLER_ID_KEY, handler_id)
-
-        # For each document that is currently open, call __connect_document()
-        # to connect all plugin-specific event handlers.
-        for doc in window.get_documents():
-            self.__connect_document(doc)
-
-    def __on_window_tab_added(self, window, tab):
-        doc = tab.get_document()
-        self.__connect_document(doc)
-
-    def __connect_document(self, doc):
-        """Connect to the document's 'saving' signal."""
-
-        if not hasattr(doc, TrimTrailingWhitespaceBeforeSavingPlugin.SAVING_HANDLER_ID_KEY):
-            # When saving the document, call __on_document_saving().
-            handler_id = doc.connect("saving", self.__on_document_saving)
-            setattr(doc, TrimTrailingWhitespaceBeforeSavingPlugin.SAVING_HANDLER_ID_KEY, handler_id)
+        if not hasattr(doc, "saving_handler_id"):
+            doc.saving_handler_id = doc.connect("saving", self.__on_document_saving)
 
         if not hasattr(doc, "saved_handler_id"):
             doc.saved_handler_id = doc.connect("saved", self.__on_document_saved)
 
-    def __disconnect_document(self, doc):
-        """Disconnect from the document's 'saving' signal."""
+    def do_deactivate(self):
+        """Disconnect from the document's 'saving' and 'saved' signals."""
+        doc = self.view.get_buffer()
 
         try:
             saved_handler_id = doc.saved_handler_id
@@ -115,29 +96,12 @@ class TrimTrailingWhitespaceBeforeSavingPlugin(GObject.Object, Gedit.WindowActiv
             doc.disconnect(saved_handler_id)
 
         try:
-            handler_id = getattr(doc, TrimTrailingWhitespaceBeforeSavingPlugin.SAVING_HANDLER_ID_KEY)
+            saving_handler_id = doc.saving_handler_id
         except AttributeError:
             pass
         else:
-            delattr(doc, TrimTrailingWhitespaceBeforeSavingPlugin.SAVING_HANDLER_ID_KEY)
-            doc.disconnect(handler_id)
-
-    def do_deactivate(self):
-        window = self.window
-
-        # For each document that is currently open, call __disconnect_document()
-        # to disconnect all plugin-specific event handlers.
-        for doc in window.get_documents():
-            self.__disconnect_document(doc)
-
-        # Disconnect from the 'tab-added' signal.
-        try:
-            handler_id = getattr(window, TrimTrailingWhitespaceBeforeSavingPlugin.TAB_ADDED_HANDLER_ID_KEY)
-        except AttributeError:
-            pass
-        else:
-            delattr(window, TrimTrailingWhitespaceBeforeSavingPlugin.TAB_ADDED_HANDLER_ID_KEY)
-            window.disconnect(handler_id)
+            del doc.saving_handler_id
+            doc.disconnect(saving_handler_id)
 
     def __on_document_saving(self, doc, *args):
         """Trim trailing space in the document."""
