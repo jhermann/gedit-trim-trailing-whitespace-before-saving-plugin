@@ -5,5 +5,5 @@ IAge=3
 Name=Trim Trailing Whitespace Before Saving
 Description=Automatically trim trailing whitespace before saving
 Authors=Daniel Trebbien <dtrebbien@gmail.com>\nOsmo Salomaa <otsaloma@cc.hut.fi>
-Copyright=Copyright © 2010–2012 Daniel Trebbien\nCopyright © 2006–2008 Osmo Salomaa
+Copyright=Copyright © 2010–2013 Daniel Trebbien\nCopyright © 2006–2008 Osmo Salomaa
 Website=https://github.com/dtrebbien/gedit-trim-trailing-whitespace-before-saving-plugin

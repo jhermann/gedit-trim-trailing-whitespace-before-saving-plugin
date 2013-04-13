@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.gedit.plugins.trimtrailingws" path="/org/gnome/gedit/plugins/trimtrailingws/">
+    <key type="b" name="restore-trailing-whitespace-up-to-caret">
+      <default>true</default>
+      <summary>Whether to restore trailing whitespace up to the caret after a save</summary>
+      <description>If true, the plugin will remember the trailing whitespace up to the caret and restore it in the editor buffer after the save completes. Note that the file will still be saved with all trailing whitespace trimmed.</description>
+    </key>
+  </schema>
+</schemalist>

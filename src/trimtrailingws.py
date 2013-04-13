@@ -1,5 +1,5 @@
 # -*- coding: utf-8; tab-width: 4; indent-tabs-mode: nil -*-
-# Copyright © 2010–2012 Daniel Trebbien
+# Copyright © 2010–2013 Daniel Trebbien
 # Copyright © 2006–2008 Osmo Salomaa
 #
 # This program is free software; you can redistribute it and/or modify it under
@@ -16,7 +16,7 @@
 # this program; if not, write to the Free Software Foundation, Inc., 51
 # Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-from gi.repository import GLib, GObject, Gtk, Gedit
+from gi.repository import GLib, Gio, GObject, Gtk, Gedit, PeasGtk
 import inspect
 import re
 
@@ -53,8 +53,10 @@ except:
         Gedit.debug(Gedit.DebugSection.DEBUG_PLUGINS, filename, lineno, func_name)
 
 
-class TrimTrailingWhitespaceBeforeSavingPlugin(GObject.Object, Gedit.ViewActivatable):
+class TrimTrailingWhitespaceBeforeSavingPlugin(GObject.Object, Gedit.ViewActivatable, PeasGtk.Configurable):
     __gtype_name__ = "GeditTrimTrailingWhitespaceBeforeSavingPlugin"
+
+    settings = Gio.Settings.new("org.gnome.gedit.plugins.trimtrailingws")
 
     WHITESPACE_CHARS = "\t\v\f "
 
@@ -102,6 +104,17 @@ class TrimTrailingWhitespaceBeforeSavingPlugin(GObject.Object, Gedit.ViewActivat
         else:
             del doc.saving_handler_id
             doc.disconnect(saving_handler_id)
+
+    def do_create_configure_widget(self):
+        settings = TrimTrailingWhitespaceBeforeSavingPlugin.settings
+
+        restore_trailing_ws_check_button = Gtk.CheckButton("Restore trailing whitespace up to caret after saving")
+        restore_trailing_ws_check_button.set_border_width(5)
+        restore_trailing_ws_check_button.set_active(settings.get_boolean("restore-trailing-whitespace-up-to-caret"))
+        settings.connect("changed::" + "restore-trailing-whitespace-up-to-caret", lambda settings, key: restore_trailing_ws_check_button.set_active(settings.get_boolean("restore-trailing-whitespace-up-to-caret")))
+        restore_trailing_ws_check_button.connect("toggled", lambda button: settings.set_boolean("restore-trailing-whitespace-up-to-caret", restore_trailing_ws_check_button.get_active()))
+
+        return restore_trailing_ws_check_button
 
     def __on_document_saving(self, doc, *args):
         """Trim trailing space in the document."""
@@ -154,7 +167,9 @@ class TrimTrailingWhitespaceBeforeSavingPlugin(GObject.Object, Gedit.ViewActivat
             pass
         else:
             del doc.current_line_trailing_whitespace
-            if len(current_line_trailing_whitespace) > 0:
+
+            settings = TrimTrailingWhitespaceBeforeSavingPlugin.settings
+            if settings.get_boolean("restore-trailing-whitespace-up-to-caret") and len(current_line_trailing_whitespace) > 0:
                 it = doc.get_iter_at_line(current_lineno)
                 lineno = it.get_line()
                 lineno_delta = current_lineno - lineno
