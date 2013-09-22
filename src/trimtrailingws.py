@@ -60,10 +60,12 @@ class TrimTrailingWhitespaceBeforeSavingPlugin(GObject.Object, Gedit.ViewActivat
 
     WHITESPACE_CHARS = "\t\v\f "
 
+    WHITESPACE_RE = re.compile("^[" + WHITESPACE_CHARS + "]*$")
+
     # GtkTextBuffer considers line ends to consist of either a newline, a carriage return,
-    # a carriage return followed by a newline, or a Unicode paragraph separator character.
-    # <http://developer.gnome.org/gtk3/stable/GtkTextIter.html#gtk-text-iter-ends-line>
-    EOL_WHITESPACE_RE = re.compile(u"[^\n\r\u2029]*?([" + WHITESPACE_CHARS + u"]*)(?:\n|\r|\r\n|\u2029|$)")
+    # a carriage return followed by a newline, or a Unicode paragraph separator character:
+    # http://developer.gnome.org/gtk3/stable/GtkTextIter.html#gtk-text-iter-ends-line
+    EOL_RE = re.compile(u"([" + WHITESPACE_CHARS + u"]*)(?:\n|\r(?!\n)|\r\n|\u2029|$)")
 
     view = GObject.property(type = Gedit.View)
 
@@ -219,18 +221,23 @@ class TrimTrailingWhitespaceBeforeSavingPlugin(GObject.Object, Gedit.ViewActivat
         end = doc.get_end_iter()
         tb_slice = doc.get_slice(start, end, False)
         tb_slice = unicode(tb_slice, 'utf-8')
-        eol_whitespace_re = TrimTrailingWhitespaceBeforeSavingPlugin.EOL_WHITESPACE_RE
         lineno = 0
-        for match in eol_whitespace_re.finditer(tb_slice):
-            start_line_offset = match.start(1) - match.start()
-            end_line_offset = match.end(1) - match.start()
-            if start_line_offset != end_line_offset:
-                start.set_line(lineno)
-                start.set_line_offset(start_line_offset)
+        for match in TrimTrailingWhitespaceBeforeSavingPlugin.EOL_RE.finditer(tb_slice):
+            group1_len = match.end(1) - match.start(1)
+            if group1_len != 0:
                 end.set_line(lineno)
-                end.set_line_offset(end_line_offset)
-                if not end.ends_line():
-                    end.forward_to_line_end()
+                # `end' should not already be at the end of the line because there
+                # should be trailing whitespace on this line. assert that this is
+                # the case before calling forward_to_line_end() because if the text iter
+                # is at the paragraph delimiter characters, then forward_to_line_end()
+                # moves the iter to the paragraph delimiter characters for the next line:
+                # https://developer.gnome.org/gtk3/stable/GtkTextIter.html#gtk-text-iter-forward-to-line-end
+                assert not end.is_end()
+                end.forward_to_line_end()
+                start = end.copy()
+                start.backward_chars(group1_len)
+                assert start.get_line() == end.get_line()
+                assert TrimTrailingWhitespaceBeforeSavingPlugin.WHITESPACE_RE.search(doc.get_slice(start, end, False)) != None
                 # This looks bad---deleting parts of the buffer while traversing
                 # forward through it---but it's actually fine because the `start'
                 # and `end' iterators are re-positioned relative to offsets within
