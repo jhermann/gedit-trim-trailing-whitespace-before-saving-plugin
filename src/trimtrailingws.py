@@ -141,7 +141,7 @@ class TrimTrailingWhitespaceBeforeSavingPlugin(GObject.Object, Gedit.ViewActivat
         tb_slice = doc.get_slice(bol, eol, False)
         tb_slice = unicode(tb_slice, 'utf-8')
         rstripped_tb_slice = tb_slice.rstrip(TrimTrailingWhitespaceBeforeSavingPlugin.WHITESPACE_CHARS)
-        doc.current_line_trailing_whitespace = tb_slice[len(rstripped_tb_slice):it.get_line_offset()]
+        current_line_trailing_whitespace = tb_slice[len(rstripped_tb_slice):it.get_line_offset()]
 
         doc.begin_user_action()
         language = doc.get_language()
@@ -150,6 +150,7 @@ class TrimTrailingWhitespaceBeforeSavingPlugin(GObject.Object, Gedit.ViewActivat
             # Make sure that this is not a patch file before trimming trailing whitespace.
             # Trimming trailing whitespace in a patch file can cause conflicts.
             if language_id != "diff":
+                doc.current_line_trailing_whitespace = current_line_trailing_whitespace
                 self.__trim_trailing_spaces_on_lines(doc)
         self.__trim_trailing_blank_lines(doc)
         doc.end_user_action()
@@ -182,7 +183,7 @@ class TrimTrailingWhitespaceBeforeSavingPlugin(GObject.Object, Gedit.ViewActivat
                 Gtk.TextBuffer.insert(doc, it, s, -1)
 
                 # Clear the 'modified' flag on the buffer. The only thing we did
-                # is restored whitespace leading up to the cursor position before
+                # is restore whitespace leading up to the cursor position before
                 # save. Note that the file was saved without this whitespace.
                 doc.set_modified(False)
 
