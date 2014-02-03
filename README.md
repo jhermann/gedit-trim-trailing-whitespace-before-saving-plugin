@@ -19,6 +19,23 @@ This is a simple plugin for Gedit 3 which automatically trims trailing whitespac
 
     <pre>glib-compile-schemas /usr/local/share/glib-2.0/schemas</pre>
 
+    Alternatively, to install the GSettings schema without root access, you can change the [`XDG_DATA_DIRS` environment variable](http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html) to include a directory under your control, such as `~/.local/share/`:
+
+      * Add the following to your `.bashrc`:
+
+        <pre>if [ -z "$XDG_DATA_DIRS" ]; then
+            export XDG_DATA_DIRS=/usr/local/share/:/usr/share/
+        fi
+        export XDG_DATA_DIRS=~/.local/share/:"$XDG_DATA_DIRS"</pre>
+
+      * Then run:
+
+        <pre>mkdir --parents ~/.local/share/glib-2.0/schemas</pre>
+
+      * Save [`org.gnome.gedit.plugins.trimtrailingws.gschema.xml`](https://raw.github.com/dtrebbien/gedit-trim-trailing-whitespace-before-saving-plugin/master/src/org.gnome.gedit.plugins.trimtrailingws.gschema.xml) to `~/.local/share/glib-2.0/schemas` and run:
+
+        <pre>glib-compile-schemas ~/.local/share/glib-2.0/schemas</pre>
+
  4. Re-start Gedit.
  5. From the Edit menu, select "Preferences".
  6. On the Plugins tab, scroll down to the entry for "Trim Trailing Whitespace Before Saving" and check the checkbox.
